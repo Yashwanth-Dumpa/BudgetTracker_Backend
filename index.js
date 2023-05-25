@@ -122,4 +122,24 @@ app.put('/editExpense/:id', (request, response) => {
 });
 
 
+//API to search records using date parameter
+
+app.get('/', (request, response) => {
+
+  let to=request.query.start;
+  let from = request.query.end;
+
+  //let to = '2023-05-23';
+  //let from = '2023-05-23';
+  
+  let sql = "select id,amount, category,date_and_time from tracker where type<>'input' and (date_and_time between "+to+ " and " +from+")";
+  console.log(sql);
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    response.send(result);
+    console.log(result);
+  });
+  console.log("Search Working");
+});
+
 app.listen(5000);
