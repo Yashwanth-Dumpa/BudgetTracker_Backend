@@ -41,7 +41,7 @@ app.get("/getDetails", (request, response) => {
 app.get("/:user_id/expenseTable", (request, response) => {
   const {user_id} = request.params;
   let sql =
-    "select id,amount, category,date_and_time,remarks from tracker where type<>'input' and user_id="+user_id;
+    "select id,amount, category,date_and_time,remarks from tracker where type<>'input' and user_id="+user_id+" order by date_and_time asc";
   con.query(sql, function (err, result) {
     if (err) throw err;
     //console.log("Row Fetched from get",result[0]);
@@ -70,7 +70,10 @@ app.get("/:user_id/viewSpends", (request, response) => {
 app.get("/:user_id/viewBalance", (request, response) => {
   const {user_id} = request.params;
   let sql =
-    "select (select sum(amount) from tracker group by type having type='debit') as expense,((select sum(amount) from tracker group by type having type='input')-(select sum(amount) from tracker group by type having type='debit')) as balance from tracker where user_id="+user_id+ " limit 1;";
+    "select (select sum(amount) from tracker where user_id="+user_id
+    +" group by type having type='debit') as expense,((select sum(amount) from tracker where user_id="+user_id
+    +" group by type having type='input')-(select sum(amount) from tracker where user_id="+user_id+" group by type having type='debit')) as balance from tracker where user_id="
+    +user_id+ " limit 1;";
   con.query(sql, function (err, result) {
     if (err) throw err;
     //console.log("Row Fetched from get",result[0]);
@@ -79,22 +82,123 @@ app.get("/:user_id/viewBalance", (request, response) => {
   });
 });
 
+
+
+
+
+//API to create accounts into database on Signup
+app.get("/insertBudget/:user_id", (request, response) => {
+  const {user_id} = request.params;
+  const months = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "Febrauary",
+    "March",
+  ];
+  console.log(user_id);
+
+  
+  let sql =  "insert into tracker(user_id,amount,type,category,month) values";
+  var vals='';
+  let values='';
+  
+     for(let i=0;i<months.length;i++){
+      if(i===months.length-1){
+        values = "("+user_id+","+0+",'input','salary','"+months[i]+"');";
+      }else{
+        values = "("+user_id+","+0+",'input','salary','"+months[i]+"'),";
+      }
+      
+      vals = vals+values;
+      //console.log(i,parseInt(details[i]));
+     
+    }//for loop end
+    sql = sql+vals;
+    console.log(sql);
+    con.query(sql,function (err,result){
+      if(err) throw err;
+      //request.setHeader('Content-Type', 'application/json'),  
+      response.send(result);
+    });
+ console.log("Inserted all the details successfully");
+});
+
+//API to post data into database for amount credit of type Input;
+app.post("/:user_id/addExpense-Credit", (request, response) => {
+  let details = request.body;
+  const {user_id} = request.params;
+  
+  console.log(details);
+ /* let sql =  "insert into tracker(user_id,amount,type,category,month) values";
+  var vals='';
+  let values='';
+  const entry = Object.entries(details);
+     for(let i=0;i<entry.length;i++){
+      if(i===entry.length-1){
+        values = "("+user_id+","+parseInt(entry[i][1])+",'input','salary','"+entry[i][0]+"');";
+      }else{
+        values = "("+user_id+","+parseInt(entry[i][1])+",'input','salary','"+entry[i][0]+"'),";
+      }
+      
+      vals = vals+values;
+      //console.log(i,parseInt(details[i]));
+     
+    }//for loop end
+    sql = sql+vals;
+    console.log(sql);
+    con.query(sql,function (err,result){
+      if(err) throw err;
+      //request.setHeader('Content-Type', 'application/json'),  
+      response.send(result);
+    });*/
+    const entry = Object.entries(details);
+    for(let i=0;i<entry.length;i++){
+      let sql = "update tracker set amount="+parseInt(entry[i][1])+" where month='"+entry[i][0]+"' and user_id="+user_id+" and type='input'";
+
+      con.query(sql,function (err,result){
+        if(err) throw err;
+        //request.setHeader('Content-Type', 'application/json'),  
+        //response.send(result);
+      });
+    }
+    console.log("Entries Noted for",user_id);
+    response.send("Success");
+
+  /*console.log('OutsideLoop',out);
+  response.send(out); 
+  console.log("ente3red succesfully into ",user_id);*/
+});
+
 //API to post data into database
 app.post("/:user_id/addExpense", (request, response) => {
   let details = request.body;
   const {user_id} = request.params;
+
+  let date = new Date(details.date);
+  const formattedDate = date.toLocaleDateString("en-GB", {
+    month: "long"
+  });
+  let month=formattedDate;
   // console.log(details);
   //let sql="insert into  tracker(user_id,amount,type,category)  values(1,5000,'debit','Groceries')";
 
   let sql =
-    "insert into tracker(user_id,amount,type,category,date_and_time,remarks)  values("+user_id+"," +
+    "insert into tracker(user_id,amount,type,category,date_and_time,remarks,month)  values("+user_id+"," +
     details.amount +
     ",'debit','" +
     details.category +
     "','" +
     details.date +
     "','" +
-    details.remarks +
+    details.remarks +"','"+month+
     "')";
   //console.log(sql);
   con.query(sql, function (err, result) {
@@ -104,6 +208,8 @@ app.post("/:user_id/addExpense", (request, response) => {
 
   console.log("Added succesfully into ",user_id);
 });
+
+
 
 //API to delete data from Expenses Table
 app.delete("/:user_id/delete-expense/:id", (request, response) => {
@@ -127,6 +233,13 @@ app.put("/:user_id/editExpense/:id", (request, response) => {
   let details = request.body;
   let { id,user_id } = request.params;
   console.log(id);
+
+  let date = new Date(details.date);
+  const formattedDate = date.toLocaleDateString("en-GB", {
+    month: "long"
+  });
+  let month=formattedDate;
+
   console.log("params", request.params);
   let sql =
     "update tracker set amount=" +
@@ -136,7 +249,7 @@ app.put("/:user_id/editExpense/:id", (request, response) => {
     "',date_and_time='" +
     details.date +
     "',remarks='" +
-    details.remarks +
+    details.remarks +"', month='" +month+
     "' where id=" +
     id +" and user_id="+user_id;
   console.log(sql);
@@ -146,6 +259,71 @@ app.put("/:user_id/editExpense/:id", (request, response) => {
     console.log(result);
   });
   console.log("Update Working");
+});
+
+//API to display the budget from database whenever the budget tab is loaded
+app.get("/:user_id/getBudget", (request, response) => {
+  
+  let {user_id } = request.params;
+  let sql =
+    "select month,amount from tracker where user_id=" +
+    user_id +" and type='input'";
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    response.send(result);
+    //console.log(result);
+  });
+  console.log("Fetching data for Budget Table Working");
+});
+
+
+//API to display the balance from database whenever the budget tab is loaded
+app.get("/:user_id/getBudget/balance", (request, response) => {
+  
+  let {user_id } = request.params;
+  let obj={};
+  const months = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "Febrauary",
+    "March",
+  ];
+  for(let i of months){
+    let sql="select (select sum(amount) from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='input')-(select sum(amount) from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='debit') as Balance;"
+    console.log(sql);
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      obj[i] = result[0].Balance;
+      if(i==='March'){
+        response.send(obj);
+        console.log(obj,"After everything");
+      }
+    });
+ 
+  }
+  console.log("Showing balance data for Budget Table Working");
+});
+//API to display the corresponding data when EDIT button is clicked
+app.get("/:user_id/displayExpense/:id", (request, response) => {
+  let details = request.body;
+  let { id,user_id } = request.params;
+  let sql =
+    "select * from tracker where id=" +
+    id +" and user_id="+user_id;
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    response.send(result);
+    console.log(result);
+  });
+  console.log("Displaying Working");
 });
 
 //API to search records using date parameter
