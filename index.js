@@ -51,7 +51,6 @@ app.get("/:user_id/expenseTable", (request, response) => {
 
 
 //API to get data for viewSpend chart
-
 app.get("/:user_id/viewSpends", (request, response) => {
   const {user_id} = request.params;
   console.log(request.params);
@@ -62,6 +61,25 @@ app.get("/:user_id/viewSpends", (request, response) => {
     if (err) throw err;
     //console.log("Row Fetched from get",result[0]);
     console.log(result);
+    response.send(result);
+  });
+});
+
+//API to get data for monthly budget on budget tab collapsible table
+app.get("/:user_id/viewSpendsMonth/", (request, response) => {
+  const {user_id} = request.params;
+  const month = request.query.start;
+  console.log(request.params);
+  
+  console.log(user_id);
+  let sql =
+    "select category, sum(amount) as amount from tracker where type<>'input' and user_id="+user_id+" and month='"+month+"' group by category";
+    console.log(sql);
+  
+    con.query(sql, function (err, result) {
+    if (err) throw err;
+    //console.log("Row Fetched from get",result[0]);
+    console.log("Monthly budget",result);
     response.send(result);
   });
 });
@@ -81,7 +99,29 @@ app.get("/:user_id/viewBalance", (request, response) => {
     response.send(result);
   });
 });
+//API to get data for viewSpendschart from dates
+app.get("/:user_id/viewSpendsDates/", (request, response) => {
+  let to = request.query.start;
+  let from = request.query.end;
+ const {user_id} = request.params;
+  //let to = '2023-05-23';
+  //let from = '2023-05-23';
 
+  let sql =
+    "select category, sum(amount) as amount from tracker where type<>'input' and user_id="+user_id+" and (date_and_time between " +
+    to +
+    " and " +
+    from +
+    ")"+  "group by category";
+    console.log(sql);
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    //console.log("Row Fetched from get",result[0]);
+    console.log(result);
+    response.send(result);
+  });
+  console.log("Dates Showing Budget graph Working");
+});
 
 
 
@@ -349,6 +389,9 @@ app.get("/:user_id/dates/", (request, response) => {
   });
   console.log("Search Working");
 });
+
+
+
 
 //API to post signup information
 /*app.post("/newUser", async (request, response) => {
