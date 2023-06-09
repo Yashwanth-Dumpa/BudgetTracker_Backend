@@ -73,7 +73,7 @@ app.get("/:user_id/viewSpendsMonth/", (request, response) => {
   
   console.log(user_id);
   let sql =
-    "select category, sum(amount) as amount from tracker where type<>'input' and user_id="+user_id+" and month='"+month+"' group by category";
+    "select * from tracker where type<>'input' and user_id="+user_id+" and month='"+month+"'";
     console.log(sql);
   
     con.query(sql, function (err, result) {
@@ -318,7 +318,7 @@ app.get("/:user_id/getBudget", (request, response) => {
 
 
 //API to display the balance from database whenever the budget tab is loaded
-app.get("/:user_id/getBudget/balance", (request, response) => {
+app.get("/:user_id/getBudget/spends", (request, response) => {
   
   let {user_id } = request.params;
   let obj={};
@@ -337,11 +337,13 @@ app.get("/:user_id/getBudget/balance", (request, response) => {
     "March",
   ];
   for(let i of months){
-    let sql="select (select sum(amount) from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='input')-(select sum(amount) from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='debit') as Balance;"
+    //let sql="select (select sum(amount) from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='input')-(select sum(amount) from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='debit') as Balance;"
+   let sql = "select sum(amount) as Spends from tracker where user_id="+user_id+" and month='"+i+"' group by type having type='debit'";
     console.log(sql);
     con.query(sql, function (err, result) {
       if (err) throw err;
-      obj[i] = result[0].Balance;
+      console.log("SPEND ",result);
+      obj[i] = result.length===0?0 :result[0].Spends;
       if(i==='March'){
         response.send(obj);
         console.log(obj,"After everything");
