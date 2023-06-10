@@ -41,7 +41,7 @@ app.get("/getDetails", (request, response) => {
 app.get("/:user_id/expenseTable", (request, response) => {
   const {user_id} = request.params;
   let sql =
-    "select id,amount, category,date_and_time,remarks from tracker where type<>'input' and user_id="+user_id+" order by date_and_time asc";
+    "select id,amount, category,date_and_time,remarks from tracker where type<>'input' and user_id="+user_id+" order by date_and_time desc";
   con.query(sql, function (err, result) {
     if (err) throw err;
     //console.log("Row Fetched from get",result[0]);
@@ -73,7 +73,7 @@ app.get("/:user_id/viewSpendsMonth/", (request, response) => {
   
   console.log(user_id);
   let sql =
-    "select * from tracker where type<>'input' and user_id="+user_id+" and month='"+month+"'";
+    "select * from tracker where type<>'input' and user_id="+user_id+" and month='"+month+"' order by date_and_time desc, amount desc";
     console.log(sql);
   
     con.query(sql, function (err, result) {
@@ -496,6 +496,19 @@ app.get("/existingUser/", (request, response) => {
     
   });
   console.log("Login Working");
+});
+
+//API to get userName;
+app.get("/:user_id/userName", (request, response) => {
+  const {user_id} = request.params;
+ 
+ let sql="select firstname from users where id="+user_id;
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    response.send(result)
+    
+  });
+  console.log("UserName fetched");
 });
 
 
