@@ -146,15 +146,15 @@ app.get("/insertBudget/:user_id", (request, response) => {
   console.log(user_id);
 
   
-  let sql =  "insert into tracker(user_id,amount,type,category,month) values";
+  let sql =  "insert into tracker(user_id,amount,budget_limit,type,category,month) values";
   var vals='';
   let values='';
   
      for(let i=0;i<months.length;i++){
       if(i===months.length-1){
-        values = "("+user_id+","+0+",'input','salary','"+months[i]+"');";
+        values = "("+user_id+","+0+","+0+",'input','salary','"+months[i]+"');";
       }else{
-        values = "("+user_id+","+0+",'input','salary','"+months[i]+"'),";
+        values = "("+user_id+","+0+","+0+", 'input','salary','"+months[i]+"'),";
       }
       
       vals = vals+values;
@@ -209,6 +209,56 @@ app.post("/:user_id/addExpense-Credit", (request, response) => {
         //response.send(result);
       });
     }
+    console.log("Entries Noted for",user_id);
+    response.send("Success");
+
+  /*console.log('OutsideLoop',out);
+  response.send(out); 
+  console.log("ente3red succesfully into ",user_id);*/
+});
+
+
+//API to post data into database for amount Limit of type Input;
+app.post("/:user_id/addExpense-Limit", (request, response) => {
+  let details = request.body;
+  const {user_id} = request.params;
+  
+  console.log(details);
+ /* let sql =  "insert into tracker(user_id,amount,type,category,month) values";
+  var vals='';
+  let values='';
+  const entry = Object.entries(details);
+     for(let i=0;i<entry.length;i++){
+      if(i===entry.length-1){
+        values = "("+user_id+","+parseInt(entry[i][1])+",'input','salary','"+entry[i][0]+"');";
+      }else{
+        values = "("+user_id+","+parseInt(entry[i][1])+",'input','salary','"+entry[i][0]+"'),";
+      }
+      
+      vals = vals+values;
+      //console.log(i,parseInt(details[i]));
+     
+    }//for loop end
+    sql = sql+vals;
+    console.log(sql);
+    con.query(sql,function (err,result){
+      if(err) throw err;
+      //request.setHeader('Content-Type', 'application/json'),  
+      response.send(result);
+    });*/
+    const entry = Object.entries(details);
+    for(let i=0;i<entry.length;i++){
+      
+      let sql = "update tracker set budget_limit="+parseInt(entry[i][1])+" where month='"+entry[i][0]+"' and user_id="+user_id+" and type='input'";
+
+      con.query(sql,function (err,result){
+        if(err) throw err;
+        //request.setHeader('Content-Type', 'application/json'),  
+        //response.send(result);
+      });
+    }
+
+    
     console.log("Entries Noted for",user_id);
     response.send("Success");
 
@@ -315,6 +365,22 @@ app.get("/:user_id/getBudget", (request, response) => {
   });
   console.log("Fetching data for Budget Table Working");
 });
+
+//API to display the Limit from database whenever the budget tab is loaded
+app.get("/:user_id/getLimit", (request, response) => {
+  
+  let {user_id } = request.params;
+  let sql =
+    "select month,budget_limit from tracker where user_id=" +
+    user_id +" and type='input'";
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    response.send(result);
+    //console.log(result);
+  });
+  console.log("Fetching data for Limit Table Working");
+});
+
 
 
 //API to display the balance from database whenever the budget tab is loaded
